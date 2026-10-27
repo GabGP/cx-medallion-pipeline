@@ -1,0 +1,14 @@
+flowchart LR
+  SRC["Source CSV<br/>71,028 calls · 2024"] -->|upload| GCS
+  subgraph GCP["Google Cloud · us-central1"]
+    GCS["Cloud Storage<br/>raw/call_center/<br/>ingest_date=YYYY-MM-DD/"]
+    BR["BRONZE<br/>call_center_raw<br/>external table · all STRING"]
+    SI["SILVER<br/>calls<br/>typed · deduped · DQ flags<br/>partitioned by day"]
+    DQ["dq_check_log<br/>8 checks per run"]
+    GO["GOLD<br/>call_metrics_monthly<br/>kpi_monthly<br/>contact_reason_scorecard"]
+    GCS -->|read in place| BR
+    BR -->|"06:00 daily_silver_build"| SI
+    SI -->|"06:15 daily_dq_checks"| DQ
+    SI -->|"06:30 daily_gold_build"| GO
+  end
+  GO -->|"freshness: 1 h"| DS["Data Studio dashboard<br/>KPI cards · trends · filters"]
